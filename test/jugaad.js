@@ -18,8 +18,8 @@ contract('Jugaad', function(accounts) {
       assert.equal(quota, 1, "Quota is not 1!");
       return jugaad.price.call();
     }).then(function(price) {
-      assert.equal(price, 10, "Price is not 10!");
-      return jugaad.itemsCollected.call();
+      assert.equal(price, 1e18, "Price is not 1 ether!");
+      return jugaad.totalItems.call();
     }).then(function(num) {
       assert.equal(num, 0, "Number of items collected is not 0!");
       return jugaad.organizer.call();
@@ -32,20 +32,23 @@ contract('Jugaad', function(accounts) {
 contract('Jugaad', function(accounts) {
   it("Should update contract wallet", function() {
     let jugaad;
-    Jugaad.new(accounts[0]).then(function(instance) {
+    Jugaad.new({from: accounts[0], value: 1e18}).then(function(instance) {
       jugaad = instance;
       return jugaad.price.call();
     }).then(function(price) {
-      let priceWei = web3.toWei(0, "ether");
-      let initialBalance = web3.eth.getBalance(jugaad.address).toNumber();
       jugaad.sellItem('ipfs-hash', {from: accounts[1]})
         .then(
           function(){
-            let newBalance = web3.eth.getBalance(jugaad.address).toNumber();
-            let difference = newBalance-initialBalance;
-            assert.equal(difference, priceWei, 'The difference after tx is not equal to price');
+            let initialBalance = web3.eth.getBalance(accounts[1]).toNumber();
+            jugaad.finish().then(
+              function() {
+                let newBalance = web3.eth.getBalance(accounts[1]).toNumber();
+                let difference = newBalance-initialBalance;
+                assert.equal(difference, price, 'The difference after tx is not equal to price');
+              }
+            );
           }
         );
+      });
     });
   });
-});

@@ -12,9 +12,10 @@ contract Jugaad {
   // State variable
   uint public totalSellers;
   uint public totalItems;
-  mapping (uint => address) public sellerAddress;
-  mapping (address => uint) public sellerSold;
+  mapping (uint => address) private sellerAddress;
+  mapping (address => uint) private sellerSold;
   mapping (address => mapping (uint => string)) private sellersItem;
+  bool public done;
 
   // Event log
   event Deposit(address _to); 
@@ -30,6 +31,7 @@ contract Jugaad {
     // init state variable
     totalSellers = 0;
     totalItems = 0;
+    done = false;
   }
   function sellItem(string item) returns (bool success) { 
     if (totalItems >= quota) { return false; } // buy upto quota
@@ -41,18 +43,22 @@ contract Jugaad {
     Deposit(msg.sender);
     return true;
   }
-  function finish() returns (bool success) {
+  function finish() {
+    // do not transfer if jugaad is done
+    if (done) { return; }
     // do not finish jugaad if quota is incomplete
-    if (totalItems != quota) { return false; }
-    
+    if (totalItems != quota) { return; }
+    // do not finish jugaad if fund is insufficient
+    if (totalItems*price > fund) { return; }
     for(uint i=0;i<totalSellers;i++)
       {
         address seller = sellerAddress[i];
         uint itemsSold = sellerSold[seller];
         uint amt = price*itemsSold;
         seller.transfer(amt);
-      } 
-    return true;
+      }
+    done = true;
+    return;
   }
   function destroy() { // so funds not locked in contract forever
     if (msg.sender == organizer) {

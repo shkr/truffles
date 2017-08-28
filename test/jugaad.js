@@ -30,7 +30,7 @@ contract('Jugaad', function(accounts) {
 });
 
 contract('Jugaad', function(accounts) {
-  it("Should transfer money after finish", function() {
+  it("Should transfer money and send item after finish", function() {
     let jugaad;
     Jugaad.new({from: accounts[0], value: 1e18}).then(function(instance) {
       jugaad = instance;
@@ -45,6 +45,11 @@ contract('Jugaad', function(accounts) {
                 let newBalance = web3.eth.getBalance(accounts[1]).toNumber();
                 let difference = newBalance-initialBalance;
                 assert.equal(difference, price, 'The difference after tx is not equal to price');
+                return jugaad.getItem.call(false);
+              }
+            ).then(
+              function (item) {
+                assert.equal(item, 'ipfs-hash', 'The item received by organizer was sent by seller');
               }
             );
           }
@@ -54,7 +59,7 @@ contract('Jugaad', function(accounts) {
   });
 
 contract('Jugaad', function(accounts) {
-  it("Should not finish if funds are insufficient for transfer", function() {
+  it("Should not finish and not send item if funds are insufficient for transfer", function() {
     let jugaad;
     Jugaad.new({from: accounts[0], value: 1e14}).then(function(instance) {
       jugaad = instance;
@@ -70,7 +75,12 @@ contract('Jugaad', function(accounts) {
              }
            ).then(function(done) {
               assert.isTrue(!done, 'The jugaad will not finish due to insufficient fund');
+              return jugaad.getItem.call(false)
            }
+          ).then(
+            function (item) {
+              assert.notEqual(item, 'ipfs-has', 'The item will not be received if jugaad is unfinished');
+            }
           );
          }
        );

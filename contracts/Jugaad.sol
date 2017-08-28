@@ -8,26 +8,43 @@ contract Jugaad {
   uint public quota;
   uint public price;
   uint public fund;
-  
+  string public fileType;
+  string public publicKey;
+
   // State variable
   uint public totalSellers;
   uint public totalItems;
   mapping (uint => address) private sellerAddress;
   mapping (address => uint) private sellerSold;
-  mapping (address => mapping (uint => string)) private sellersItem;
+  mapping (uint => address) private itemSeller;
+  mapping (uint => string) private itemValue;
   bool public done;
 
   // Event log
   event Deposit(address _to); 
   event Refund(address _from);
   
+  // Modifier
+  // If this modifier is used, it will
+  // prepend a check that only passes
+  // if the function is called from
+  // a certain address.
+  modifier onlyBy(address _account) {
+    require(msg.sender == _account);
+    // Do not forget the "_;"! It will
+    // be replaced by the actual function
+    // body when the modifier is used.
+    _;
+  }
   // Constructor
-  function Jugaad() payable {
+  function Jugaad(string publicKeyReceived, string fileTypeRequired, uint quotaRequired) payable {
     organizer = msg.sender;
     fund = msg.value;
-    // 1-seller jugaad
-    quota = 1;
+    // parameters
+    publicKey = publicKeyReceived;
+    quota = quotaRequired;
     price = 1e18;
+    fileType = fileTypeRequired;
     // init state variable
     totalSellers = 0;
     totalItems = 0;
@@ -38,12 +55,17 @@ contract Jugaad {
     if (sellerSold[msg.sender]==0) {
       sellerAddress[totalSellers++] = msg.sender;
     }
-    sellersItem[msg.sender][++sellerSold[msg.sender]] = item;
+    itemSeller[totalItems] = msg.sender;
+    itemValue[totalItems] = item;
+    sellerSold[msg.sender]++;
     totalItems++;
     Deposit(msg.sender);
     return true;
   }
-  function finish() {
+  function accessItem(uint itemId) onlyBy(organizer) constant returns (string value) {
+    return itemValue[itemId];
+  }
+  function finish() onlyBy(organizer) {
     // do not transfer if jugaad is done
     if (done) { return; }
     // do not finish jugaad if quota is incomplete

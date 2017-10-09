@@ -36,14 +36,28 @@ contract Jugaad {
     // body when the modifier is used.
     _;
   }
+
+  // If this modifier is used with a payable
+  // function call then it requires the 
+  // value to be greater than equal to _amount
+  // and excess value is returned
+  modifier costs(uint _amount) {
+    require(msg.value >= _amount);
+    _;
+    if (msg.value > _amount)
+        msg.sender.transfer(msg.value - _amount);
+  }
+
   // Constructor
-  function Jugaad(string publicKeyReceived, string fileTypeRequired, uint quotaRequired) payable {
+  function Jugaad(string publicKeyReceived, string fileTypeRequired, 
+                  uint priceRequired, uint quotaRequired) costs( priceRequired * quotaRequired ) payable {
+    
     organizer = msg.sender;
     fund = msg.value;
     // parameters
     publicKey = publicKeyReceived;
     quota = quotaRequired;
-    price = 1e18;
+    price = priceRequired;
     fileType = fileTypeRequired;
     // init state variable
     totalSellers = 0;
